@@ -74,14 +74,10 @@ class Model():
           (1.0/(end_time - self.last_time)),
       ]
       for index, score in results:
-        #text_lines.append('score=%.2f: %s' % (score, self.labels[index]))
         labels = [score, self.labels[index]]
         text_lines.extend(labels)
         
-      # if(len(text_lines) > 2):
-      #   status = [text_lines[1], text_lines[2], ""]
-      # else:
-      #     status = [text_lines[1], "", ""]
+    
       self.last_time = end_time
  
       flaskData = text_lines

@@ -122,7 +122,6 @@ def render_gen(args):
     output = None
     while True:
         tensor, layout, command = (yield output)
-
         inference_rate = next(fps_counter)
         if draw_overlay:
             start = time.monotonic()
