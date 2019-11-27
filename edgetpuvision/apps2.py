@@ -71,6 +71,7 @@ class run_server():
         self.overlay = 0
         self._bitrate=1000000
         self._start_recording()
+        
 
     def _start_recording(self):
         
@@ -85,21 +86,25 @@ class run_server():
 
         self._camera.request_key_frame()
     def image(self):
+            
+            
         
-        # test = self.return_frame()
-        # print(test)
-        # with StreamingServer(self.camera, self.args.bitrate) as server:
-        def render_overlay(tensor, layout, command):
+
+        self.camera.render_overlay = self.render_overlay
+        return(self.overlay)
+        # signal.pause()
+    
+
+    def render_overlay(self, tensor, layout, command):
             test = tensor.reshape(224, 224, 3)
             im = Image.fromarray(test)
-            im.save("your_file.jpeg")
+            im.save("eee.jpeg")
             
-            overlay = self.gen.send((tensor, layout, command))
-            print(overlay)
-            self.overlay = overlay
 
-        self.camera.render_overlay = render_overlay
-        signal.pause()
+            
+            self.overlay = self.gen.send((tensor, layout, command))
+            
+            
 
     def write(self, data):
         """Called by camera thread for each compressed frame."""
