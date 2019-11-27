@@ -69,6 +69,7 @@ class run_server():
         self._camera = self.camera
         assert self.camera is not None
         self.overlay = 0
+        self.img = 0
         self._bitrate=1000000
         self._start_recording()
         
@@ -91,16 +92,16 @@ class run_server():
         
 
         self.camera.render_overlay = self.render_overlay
-        return(self.overlay)
+        return(self.img)
         # signal.pause()
     
 
     def render_overlay(self, tensor, layout, command):
             test = tensor.reshape(224, 224, 3)
             im = Image.fromarray(test)
-            im.save("eee.jpeg")
+            # im.save("eee.jpeg")
             
-
+            self.img = im
             
             self.overlay = self.gen.send((tensor, layout, command))
             
