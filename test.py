@@ -20,6 +20,6 @@ def main():
     while True:
         
         test = l.image()
-        print(test)
+        
 if __name__ == '__main__':
     main()

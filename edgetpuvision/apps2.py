@@ -14,12 +14,15 @@
 
 import argparse
 import logging
+
+import threading
 import signal
-
-from .camera import make_camera
-from .gstreamer import Display, run_gen
-from .streaming.server import StreamingServer
-
+from . import gstreamer
+from . import pipelines
+# from .camera import make_camera
+from .gstreamer import Display
+# from .streaming.server import StreamingServer
+from .gst import *
 from PIL import Image
 
 from . import svg
@@ -41,13 +44,6 @@ ALLOWED_NALS = {NAL.CODED_SLICE_NON_IDR,
                 NAL.SEI}
 
 
-# class test():
-#     def __init__():
-#         pass
-#     def hello_function():
-#         print('Hello World, it\'s me.  Function.')
-#         return ("hello")
-
 class run_server():
     def __init__(self, add_render_gen_args, render_gen):
         logging.basicConfig(level=logging.INFO)
@@ -65,14 +61,25 @@ class run_server():
         self.args = parser.parse_args()
 
         self.gen = render_gen(self.args)
-        self.camera = make_camera(self.args.source, next(self.gen), self.args.loop)
+        self.camera = self.make_camera(self.args.source, next(self.gen), self.args.loop)
         self._camera = self.camera
         assert self.camera is not None
         self.overlay = 0
         self.img = 0
         self._bitrate=1000000
         self._start_recording()
-        
+    
+    def make_camera(self, source, inference_size, loop):
+        fmt = parse_format(source)
+        if fmt:
+            return DeviceCamera(fmt, inference_size)
+
+        filename = os.path.expanduser(source)
+        if os.path.isfile(filename):
+            return FileCamera(filename, inference_size, loop)
+
+        return None
+
 
     def _start_recording(self):
         
@@ -104,17 +111,82 @@ class run_server():
             self.img = im
             
             self.overlay = self.gen.send((tensor, layout, command))
-            
-            
 
     def write(self, data):
         """Called by camera thread for each compressed frame."""
         assert data[0:4] == b'\x00\x00\x00\x01'
         frame_type = data[4] & 0b00011111
-        if frame_type in ALLOWED_NALS:
-            self._camera.request_key_frame()
         
-        
+            
+
+
+
+
+class Camera:
+    def __init__(self, render_size, inference_size, loop):
+        self._layout = gstreamer.make_layout(inference_size, render_size)
+        self._loop = loop
+        self._thread = None
+        self.render_overlay = None
+
+    @property
+    def resolution(self):
+        return self._layout.render_size
+
+
+    def start_recording(self, obj, format, profile, inline_headers, bitrate, intra_period):
+       
+        def on_buffer(data, _):
+            
+
+            
+            pass
+
+        def render_overlay(tensor, layout, command):
+            
+            if self.render_overlay:
+                self.render_overlay(tensor, layout, command)
+            return None
+
+        signals = {
+          'h264sink': {'new-sample': gstreamer.new_sample_callback(on_buffer)},
+        }
+       
+        hello = gstreamer.new_sample_callback(on_buffer)
+        print(hello)
+        pipeline = self.make_pipeline(format, profile, inline_headers, bitrate, intra_period)
+
+        self._thread = threading.Thread(target=gstreamer.run_pipeline,
+                                        args=(pipeline, self._layout, self._loop,
+                                              render_overlay, gstreamer.Display.NONE,
+                                              False, signals))
+        self._thread.start()
+
+    def stop_recording(self):
+        gstreamer.quit()
+        self._thread.join()
+
+    def make_pipeline(self, fmt, profile, inline_headers, bitrate, intra_period):
+        raise NotImplemented
+
+class FileCamera(Camera):
+    def __init__(self, filename, inference_size, loop):
+        info = gstreamer.get_video_info(filename)
+        super().__init__((info.get_width(), info.get_height()), inference_size,
+                          loop=loop)
+        self._filename = filename
+
+    def make_pipeline(self, fmt, profile, inline_headers, bitrate, intra_period):
+        return pipelines.video_streaming_pipeline(self._filename, self._layout)
+
+class DeviceCamera(Camera):
+    def __init__(self, fmt, inference_size):
+        super().__init__(fmt.size, inference_size, loop=False)
+        self._fmt = fmt
+
+    def make_pipeline(self, fmt, profile, inline_headers, bitrate, intra_period):
+        return pipelines.camera_streaming_pipeline(self._fmt, profile, bitrate, self._layout)
+
             
 
 
@@ -141,3 +213,4 @@ class NAL:
     SEI                 = 6  # Supplemental enhancement information (SEI)
     SPS                 = 7  # Sequence parameter set
     PPS                 = 8  # Picture parameter set
+
