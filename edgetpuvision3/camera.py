@@ -26,6 +26,7 @@ class Camera:
         self._loop = loop
         self._thread = None
         self.render_overlay = None
+        self.stupid_overlay = None
 
     @property
     def resolution(self):
@@ -44,9 +45,12 @@ class Camera:
             return None
 
         def stupid_overlay(tensor, layout, command):
-            image = tensor.reshape(480, 640, 3)
-            im = Image.fromarray(image)
-            im.save("test.jpeg")
+            if self.stupid_overlay:
+                self.stupid_overlay(tensor, layout, command)
+            # image = tensor.reshape(480, 640, 3)
+            # im = Image.fromarray(image)
+            # im.save("test.jpeg")
+            # print(tensor.shape)
             #Image.fromarray(tensor).convert("RGB").save("art.png")
             return None
 
