@@ -30,11 +30,13 @@ def return_img():
     if isinstance(img, int):
         print('0')
     else:
-        img.save(img_io, 'JPEG', quality=100)
-        stream = img_io
-        stream.seek(0)
-        frame = stream.read()
-        yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        
+        yield('0')
+        # img.save(img_io, 'JPEG', quality=100)
+        # stream = img_io
+        # stream.seek(0)
+        # frame = stream.read()
+        # yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 def serve_pil_image(pil_img):

@@ -89,20 +89,21 @@ class Run_Server():
     
 
     def render_overlay(self, tensor, layout, command):
+        
+        # test = tensor.reshape(224, 224, 3)
+        
+        # im = PIL.Image.fromarray(numpy.uint8(test))
+        # self.img = im
 
             
-            self.overlay = self.gen.send((tensor, layout, command))
+        self.overlay = self.gen.send((tensor, layout, command))
     def stupid_overlay(self, tensor, layout, command):
         test = tensor.reshape(480, 640, 3)
         
         im = PIL.Image.fromarray(numpy.uint8(test))
         self.img = im
+        pass
 
-    def write(self, data):
-        """Called by camera thread for each compressed frame."""
-        assert data[0:4] == b'\x00\x00\x00\x01'
-        frame_type = data[4] & 0b00011111
-        
 
 
         
