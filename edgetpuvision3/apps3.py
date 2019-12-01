@@ -84,7 +84,7 @@ class Run_Server():
         
         self.camera.stupid_overlay = self.stupid_overlay
         self.camera.render_overlay = self.render_overlay
-        return(self.img)
+        return(self.img, self.overlay)
         # signal.pause()
     
 
@@ -97,6 +97,7 @@ class Run_Server():
 
             
         self.overlay = self.gen.send((tensor, layout, command))
+        
     def stupid_overlay(self, tensor, layout, command):
         test = tensor.reshape(480, 640, 3)
         im = PIL.Image.fromarray(test)

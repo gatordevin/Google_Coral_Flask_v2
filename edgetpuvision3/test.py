@@ -29,9 +29,11 @@ l = Run_Server(model)
 def checkClient(q):
     while True:
 
-        img = l.image()
+        img = l.image()[0]
+        svg = l.image()[1]
+
         
-        q.put(img)
+        q.put(svg)
         sleep(.01)
 
 q = queue.Queue(maxsize=2)
@@ -49,6 +51,26 @@ def gen():
             frame = stream.read()
             yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+def svg():
+    while True:
+        img = q.get()
+        print(svg)
+        if img:
+            yield (img)
+
+
+
+from flask import stream_with_context, request, Response
+
+@app.route('/stream')
+def streamed_response():
+    def generate():
+        yield 'Hello '
+        yield 'yeee'
+        yield '!'
+    return Response(stream_with_context(next(svg())))
+
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -56,7 +78,15 @@ def video_feed():
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+custom_color_global_variable = 'red'
 
+@app.route('/circle-thin-custom-color.svg', methods=('GET', 'HEAD'))
+def circle_thin_custom_color():
+    """Thin circle with the color set by a global variable."""
+    
+    return Response(svg(),
+        mimetype='image/svg+xml'
+    )
 
 @app.route('/')
 def index():
@@ -75,7 +105,7 @@ def signal_handler(signal, frame):
 if __name__ == "__main__":
     global status
     
-    thread22 = Thread(target=gen)
+    thread22 = Thread(target=svg)
     thread22.start()
     thread22.deamon = True
     thread = Thread(target=flaskServer)

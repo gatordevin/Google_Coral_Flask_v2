@@ -155,7 +155,7 @@ class Model():
                     print_results(inference_rate, results)
 
                 title = titles[engine]
-                print(inference_time)
+                
                 output = overlay(title, results, inference_time, inference_rate, layout)
             else:
                 output = None
