@@ -50,7 +50,7 @@ class Run_Server():
         self._camera = self.camera
         assert self.camera is not None
         self.overlay = 0
-        self.img = 0
+        self.img = None
         self._bitrate=1000000
         self._start_recording()
     
@@ -99,10 +99,8 @@ class Run_Server():
         self.overlay = self.gen.send((tensor, layout, command))
     def stupid_overlay(self, tensor, layout, command):
         test = tensor.reshape(480, 640, 3)
-        
-        im = PIL.Image.fromarray(numpy.uint8(test))
+        im = PIL.Image.fromarray(test)
         self.img = im
-        pass
 
 
 
