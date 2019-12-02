@@ -347,7 +347,7 @@ class StreamingServer:
 
     def write(self, data):
         """Called by camera thread for each compressed frame."""
-        # assert data[0:4] == b'\x00\x00\x00\x01'
+        assert data[0:4] == b'\x00\x00\x00\x01'
         frame_type = data[4] & 0b00011111
 
     

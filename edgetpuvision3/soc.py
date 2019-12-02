@@ -7,8 +7,7 @@ from classify import Model
 import queue
 import threading
 from apps3 import Run_Server
-
-from apps3 import Run_Server
+import logging
 from threading import Thread, Event
 from flask import Flask, send_file, Response, render_template
 from time import sleep
@@ -41,7 +40,7 @@ l = Run_Server(model)
 
 
 
-def checkClient(q):
+def checkClient(q, qu):
     while True:
 
         img = l.image()[0]
@@ -50,12 +49,15 @@ def checkClient(q):
         
         q.put(img)
         qu.put(svg)
-        sleep(.01)
+        sleep(.001)
 
 q = queue.Queue(maxsize=2)
 qu = queue.Queue(maxsize=2)
-t1 = threading.Thread(target=checkClient, name=checkClient, args=(q,))
+t1 = threading.Thread(target=checkClient, name=checkClient, args=(q, qu))
+
 t1.start()
+t1.deamon = True
+
 def gen():
     while True:
         img = q.get()
@@ -78,17 +80,13 @@ def svg():
 
 
 #turn the flask app into a socketio app
-socketio = SocketIO(app, async_mode=None, logger=True, engineio_logger=True)
+socketio = SocketIO(app, logger=False, engineio_logger=False)
 
 #random number Generator Thread
 thread = Thread()
 thread_stop_event = Event()
 
 def randomNumberGenerator():
-    """
-    Generate a random number every 1 second and emit to a socketio instance (broadcast)
-    Ideally to be run in a separate thread?
-    """
     #infinite loop of magical random numbers
     print("Making random numbers")
     while not thread_stop_event.isSet():
@@ -96,7 +94,7 @@ def randomNumberGenerator():
         number = svg()
         # print(number, "done")
         socketio.emit('newnumber', {'number': number}, namespace='/test')
-        socketio.sleep(.1)
+        socketio.sleep(.05)
 
 
 @app.route('/')
@@ -120,7 +118,8 @@ def video_feed():
     
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-
+logging.getLogger('socketio').setLevel(logging.ERROR)
+logging.getLogger('engineio').setLevel(logging.ERROR)
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
@@ -128,4 +127,4 @@ def test_disconnect():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host="0.0.0.0", debug=False)
+    socketio.run(app, host="0.0.0.0", debug=False, log_output=False)
