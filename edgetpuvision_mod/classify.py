@@ -103,7 +103,7 @@ def print_results(inference_rate, results):
     for label, score in results:
         print('  %s, score=%.2f' % (label, score))
 
-def render_gen(args):
+def render_gen1(args):
     acc = accumulator(size=args.window, top_k=args.top_k)
     acc.send(None)  # Initialize.
 
@@ -144,7 +144,7 @@ def render_gen(args):
         elif command == 'n':
             engine = next(engines)
 
-def add_render_gen_args(parser):
+def add_render_gen_args1(parser):
     parser.add_argument('--model', required=False,
                         help='.tflite model path', default='/home/mendel/demo_files/mobilenet_v2_1.0_224_quant_edgetpu.tflite')
     parser.add_argument('--labels', required=False,

@@ -49,8 +49,7 @@ from PIL import Image
 
 from pipelines import *
 
-COMMAND_SAVE_FRAME = ''
-
+COMMAND_SAVE_FRAME = ' '
 COMMAND_PRINT_INFO = 'p'
 COMMAND_QUIT       = 'q'
 WINDOW_TITLE       = 'Coral'
@@ -61,7 +60,6 @@ class Display(enum.Enum):
     NONE = 'none'
 
     def __str__(self):
-        print(self.value)
         return self.value
 
 @contextlib.contextmanager
@@ -131,15 +129,12 @@ def save_frame(rgb, size, overlay=None, ext='png'):
     img = Image.frombytes('RGB', size, rgb, 'raw')
     name = 'img-%s.%s' % (tag, ext)
     img.save(name)
-    width, height = img.size
-    print(width, height)
     print('Frame saved as "%s"' % name)
     if overlay:
         name = 'img-%s.svg' % tag
         with open(name, 'w') as f:
             f.write(overlay)
         print('Overlay saved as "%s"' % name)
-        
 
 Layout = collections.namedtuple('Layout', ('size', 'window', 'inference_size', 'render_size'))
 
@@ -148,7 +143,6 @@ def make_layout(inference_size, render_size):
     render_size = Size(*render_size)
     size = min_outer_size(inference_size, render_size)
     window = center_inside(render_size, size)
-    
     return Layout(size=size, window=window,
                   inference_size=inference_size, render_size=render_size)
 
@@ -234,13 +228,11 @@ def on_new_sample(sink, pipeline, render_overlay, layout, images, get_command):
 
         svg = render_overlay(np.frombuffer(data, dtype=np.uint8),
                              command=custom_command)
-
         glsink = pipeline.get_by_name('glsink')
         if glsink:
             glsink.set_property('svg', svg)
-        
+
         if save_frame:
-            
             images.put((data, layout.inference_size, svg))
 
     return Gst.FlowReturn.OK
@@ -288,10 +280,8 @@ def camera_pipeline(fmt, layout, display):
 def file_pipline(is_image, filename, layout, display):
     if display is Display.NONE:
         if is_image:
-            
             return image_headless_pipeline(filename, layout)
         else:
-            print("fsadkljbfks")
             return video_headless_pipeline(filename, layout)
     else:
         fullscreen = display is Display.FULLSCREEN
@@ -303,10 +293,10 @@ def file_pipline(is_image, filename, layout, display):
 def quit():
     Gtk.main_quit()
 
-def run_pipeline(pipeline, layout, loop, render_overlay, stupid_overlay, display, handle_sigint=True, signals=None):
+def run_pipeline(pipeline, layout, loop, render_overlay, display, handle_sigint=True, signals=None):
     # Create pipeline
     pipeline = describe(pipeline)
-    
+    print(pipeline)
     pipeline = Gst.parse_launch(pipeline)
 
     # Set up a pipeline bus watch to catch errors.
@@ -370,15 +360,8 @@ def run_pipeline(pipeline, layout, loop, render_overlay, stupid_overlay, display
 
     with Worker(save_frame) as images, Commands() as get_command:
         signals = {'appsink':
-            {'new-sample': functools.partial(on_new_sample, 
+            {'new-sample': functools.partial(on_new_sample,
                 render_overlay=functools.partial(render_overlay, layout=layout),
-                layout=layout,
-                images=images,
-                get_command=get_command),
-             'eos' : on_sink_eos}, 
-             'stupidsink':
-            {'new-sample': functools.partial(on_new_sample, 
-                render_overlay=functools.partial(stupid_overlay, layout=layout),
                 layout=layout,
                 images=images,
                 get_command=get_command),

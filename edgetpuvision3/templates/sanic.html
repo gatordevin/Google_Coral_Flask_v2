@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script src="static/js/applicatio11n.js"></script>
+
+</head>
+<style>
+.img-overlay-wrap {
+  position: relative;
+  display: inline-block; /* <= shrinks container to image size */
+  transition: transform 150ms ease-in-out;
+}
+
+.img-overlay-wrap img { /* <= optional, for responsiveness */
+   display: block;
+   max-width: 100%;
+   height: auto;
+}
+
+.img-overlay-wrap svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+
+</style>
+<body>
+
+    
+
+
+   <!-- /#log -->
+  <div class="img-overlay-wrap">
+
+    <img style="height:480px; width: 640px;" src="{{ url_for('video_feed') }}">
+    
+    <div id="log">
+    
+
+    </div>
+  </div>
+
+</body>
+</html>

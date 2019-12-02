@@ -135,6 +135,8 @@ def run_server(model):
             # server.send_overlay(overlay if overlay else EMPTY_SVG)
         def stupid_overlay(tensor, layout, command):
             print(tensor.shape, "stupoid_overlaty")
+        def kill():
+            
 
         camera.render_overlay = render_overlay
         camera.stupid_overlay = stupid_overlay
