@@ -478,8 +478,8 @@ class ProtoClient(Client):
     def __init__(self, name, sock, command_queue, resolution):
         super().__init__(name, sock, command_queue)
         self._resolution = resolution
-
     def _queue_video(self, data):
+        print("Wotr")
         return self._queue_message(VideoMessage(data))
 
     def _queue_overlay(self, svg):

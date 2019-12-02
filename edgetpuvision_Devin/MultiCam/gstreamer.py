@@ -47,8 +47,7 @@ from gi.repository import GstPbutils  # Must be called after Gst.init().
 
 from PIL import Image
 
-from pipelines import *
-
+from gst import *
 COMMAND_SAVE_FRAME = ' '
 COMMAND_PRINT_INFO = 'p'
 COMMAND_QUIT       = 'q'
@@ -183,6 +182,7 @@ def pull_sample(sink):
 def new_sample_callback(process):
     def callback(sink, pipeline):
         with pull_sample(sink) as (sample, data):
+            print(len(data))
             process(data, caps_size(sample.get_caps()))
         return Gst.FlowReturn.OK
     return callback
@@ -209,32 +209,12 @@ def on_sink_eos(sink, pipeline):
     if overlay:
         overlay.set_eos()
 
-def on_new_sample(sink, pipeline, render_overlay, layout, images, get_command):
+def on_new_sample(sink,pipeline):
     with pull_sample(sink) as (sample, data):
-        custom_command = None
-        save_frame = False
-        
-        command = get_command()
-        if command == COMMAND_SAVE_FRAME:
-            save_frame = True
-        elif command == COMMAND_PRINT_INFO:
-            print('Timestamp: %.2f' % time.monotonic())
-            print('Render size: %d x %d' % layout.render_size)
-            print('Inference size: %d x %d' % layout.inference_size)
-        elif  command == COMMAND_QUIT:
-            Gtk.main_quit()
-        else:
-            custom_command = command
-            
-        svg = render_overlay(np.frombuffer(data, dtype=np.uint8),
-                             command=custom_command)
-        glsink = pipeline.get_by_name('glsink')
-        if glsink:
-            glsink.set_property('svg', svg)
-
-        if save_frame:
-            images.put((data, layout.inference_size, svg))
-
+        nparr = np.frombuffer(data, dtype=np.uint8)
+        image = nparr.reshape(480, 640, 3)
+        im = Image.fromarray(image)
+        im.save("test.jpeg")
     return Gst.FlowReturn.OK
 
 def run_gen(render_overlay_gen, *, source, loop, display):
@@ -293,81 +273,21 @@ def file_pipline(is_image, filename, layout, display):
 def quit():
     Gtk.main_quit()
 
-def run_pipeline(pipeline, layout, loop, render_overlay, display, handle_sigint=True, signals=None):
+def on_buffer(data, _):
+    pass
+
+def run_pipeline(source):
     # Create pipeline
-    pipeline = describe(pipeline)
-    print(pipeline)
+    pipeline = source
     pipeline = Gst.parse_launch(pipeline)
 
     # Set up a pipeline bus watch to catch errors.
     bus = pipeline.get_bus()
     bus.add_signal_watch()
-    bus.connect('message', on_bus_message, pipeline, loop)
-
-    if display is not Display.NONE:
-        # Needed to commit the wayland sub-surface.
-        def on_gl_draw(sink, widget):
-            widget.queue_draw()
-
-        # Needed to account for window chrome etc.
-        def on_widget_configure(widget, event, glsink):
-            allocation = widget.get_allocation()
-            glsink.set_render_rectangle(allocation.x, allocation.y,
-                    allocation.width, allocation.height)
-            return False
-
-        window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
-        window.set_title(WINDOW_TITLE)
-        window.set_default_size(layout.render_size.width, layout.render_size.height)
-        if display is Display.FULLSCREEN:
-            window.fullscreen()
-
-        drawing_area = Gtk.DrawingArea()
-        window.add(drawing_area)
-        drawing_area.realize()
-
-        glsink = pipeline.get_by_name('glsink')
-        glsink.connect('drawn', on_gl_draw, drawing_area)
-
-        # Wayland window handle.
-        wl_handle = glsink.get_wayland_window_handle(drawing_area)
-        glsink.set_window_handle(wl_handle)
-
-        # Wayland display context wrapped as a GStreamer context.
-        wl_display = glsink.get_default_wayland_display_context()
-        glsink.set_context(wl_display)
-
-        drawing_area.connect('configure-event', on_widget_configure, glsink)
-        window.connect('delete-event', Gtk.main_quit)
-        window.show_all()
-
-        # The appsink pipeline branch must use the same GL display as the screen
-        # rendering so they get the same GL context. This isn't automatically handled
-        # by GStreamer as we're the ones setting an external display handle.
-        def on_bus_message_sync(bus, message, glsink):
-            if message.type == Gst.MessageType.NEED_CONTEXT:
-                _, context_type = message.parse_context_type()
-                if context_type == GstGL.GL_DISPLAY_CONTEXT_TYPE:
-                    sinkelement = glsink.get_by_interface(GstVideo.VideoOverlay)
-                    gl_context = sinkelement.get_property('context')
-                    if gl_context:
-                        display_context = Gst.Context.new(GstGL.GL_DISPLAY_CONTEXT_TYPE, True)
-                        GstGL.context_set_gl_display(display_context, gl_context.get_display())
-                        message.src.set_context(display_context)
-            return Gst.BusSyncReply.PASS
-
-        bus.set_sync_handler(on_bus_message_sync, glsink)
+    bus.connect('message', on_bus_message, pipeline, False)
 
     with Worker(save_frame) as images, Commands() as get_command:
-        signals = {'appsink':
-            {'new-sample': functools.partial(on_new_sample,
-                render_overlay=functools.partial(render_overlay, layout=layout),
-                layout=layout,
-                images=images,  
-                get_command=get_command),
-             'eos' : on_sink_eos},
-            **(signals or {})
-        }
+        signals = {'appsink':{'new-sample': functools.partial(on_new_sample),'eos' : on_sink_eos},'h264sink': {'new-sample': new_sample_callback(on_buffer)}}
 
         for name, signals in signals.items():
             component = pipeline.get_by_name(name)
@@ -375,9 +295,7 @@ def run_pipeline(pipeline, layout, loop, render_overlay, display, handle_sigint=
                 for signal_name, signal_handler in signals.items():
                     component.connect(signal_name, signal_handler, pipeline)
 
-        # Handle signals.
-        if handle_sigint:
-            GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, Gtk.main_quit)
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, Gtk.main_quit)
 
         # Run pipeline.
         pipeline.set_state(Gst.State.PLAYING)
@@ -391,3 +309,14 @@ def run_pipeline(pipeline, layout, loop, render_overlay, display, handle_sigint=
         # Process all pending MainContext operations.
         while GLib.MainContext.default().iteration(False):
             pass
+    
+#_thread1 = threading.Thread(target=run_pipeline,args=("v4l2src device=/dev/video0 ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! tee name=t t. ! queue max-size-buffers=1 leaky=downstream ! videoconvert ! x264enc speed-preset=ultrafast tune=zerolatency threads=4 key-int-max=5 bitrate=1000 aud=False bframes=1 ! video/x-h264,profile=baseline ! h264parse ! video/x-h264,stream-format=byte-stream,alignment=nal ! appsink name=h264sink emit-signals=True max-buffers=1 drop=False sync=False",))
+_thread2 = threading.Thread(target=run_pipeline,args=("v4l2src device=/dev/video1 ! video/x-raw,format=YUY2,width=640,height=480,framerate=30/1 ! tee name=t t. ! queue ! glfilterbin filter=glbox ! video/x-raw,format=RGB,width=640,height=480 ! appsink name=appsink emit-signals=True max-buffers=1 drop=True sync=False",))
+
+#_thread1.start()
+_thread2.start()
+
+while True:
+    pass
+
+
