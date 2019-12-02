@@ -96,7 +96,11 @@ def randomNumberGenerator():
 
 @app.route('/')
 def indexa():
-    
+    data.a._stop_recording()
+    sleep(2)
+    model = Model_Detect
+        
+    data.a = Run_Server(model)
 
     #only by sending this page first will the client be connected to the socketio instance
     return render_template('sanic.html')
@@ -104,7 +108,7 @@ def indexa():
 @app.route('/b')
 def indexb():
     data.a._stop_recording()
-
+    sleep(2)
     model = Model
         
     data.a = Run_Server(model)
