@@ -1,44 +1,69 @@
-import queue
-import threading
-import requests
-
-from apps3 import Run_Server
-from threading import Thread, Event
-from flask import Flask, send_file, Response, render_template
+from flask import Flask, render_template, url_for, copy_current_request_context, Response
+from random import random
 from time import sleep
+import queue
+from apps3 import Run_Server
+import logging
+import itertools
 from PIL import Image
 from io import BytesIO
-from threading import Thread, active_count
-import signal
-from threading import Thread, Event
-from threading import Thread
+from threading import Thread, active_count, Event
 import sys
 import threading
-import queue
 from classify import Model
+from detect import Model_Detect
+from flask import Flask, Response, redirect, request, url_for
+__author__ = 'slynn'
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+app.config['DEBUG'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+
+
+
+
+class DataStore():
+    a = None
+    c = None
+
+data = DataStore()
+
+
 
 
 model = Model
+    
+data.a = Run_Server(model)
 
-l = Run_Server(model)
 
-
-
-def checkClient(q):
+def checkClient(q, qu):
     while True:
 
-        img = l.image()[0]
-        svg = l.image()[1]
-
-        
-        q.put(img)
-        sleep(.01)
+        img = data.a.image()[0]
+        svg = data.a.image()[1]
+        # print(svg)
+        if svg:
+            qu.put(svg)
+        if img:
+            q.put(img)
+        sleep(.001)
 
 q = queue.Queue(maxsize=2)
-t1 = threading.Thread(target=checkClient, name=checkClient, args=(q,))
+qu = queue.Queue(maxsize=2)
+t1 = threading.Thread(target=checkClient, name=checkClient, args=(q, qu))
+
 t1.start()
+t1.deamon = True
+
+
+def svg():
+    for i, c in enumerate(itertools.cycle('\|/-')):
+        
+        c = svg = qu.get()
+        
+        yield "data: %s \n\n" % (c)
 def gen():
     while True:
         img = q.get()
@@ -51,72 +76,18 @@ def gen():
             frame = stream.read()
             yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-def svg():
-    while True:
-        img = q.get()
-        
-        if img:
-            yield (img)
-
-
-
-# from flask import stream_with_context, request, Response
-
-# @app.route('/stream')
-# def streamed_response():
-#     def generate():
-#         yield 'Hello '
-#         yield 'yeee'
-#         yield '!'
-#     return Response(stream_with_context(next(svg())))
-
-
-
 @app.route('/video_feed')
 def video_feed():
     
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-# custom_color_global_variable = 'red'
-
-# @app.route('/circle-thin-custom-color.svg', methods=('GET', 'HEAD'))
-# def circle_thin_custom_color():
-#     """Thin circle with the color set by a global variable."""
-    
-#     return Response(svg(),
-#         mimetype='image/svg+xml'
-#    )
-
 @app.route('/')
 def index():
+    if request.headers.get('accept') == 'text/event-stream':
+        return Response(svg(), content_type='text/event-stream')
     return render_template('index.html')
 
 
-
-def flaskServer():
+if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=False)
-
-def signal_handler(signal, frame):
-    print("\nprogram exiting gracefully")
-    sys.exit(0)
-
-
-if __name__ == "__main__":
-    global status
-    
-    thread22 = Thread(target=gen)
-    thread22.start()
-    thread22.deamon = True
-    thread = Thread(target=flaskServer)
-    thread.start()
-    sleep(2)
-    signal.signal(signal.SIGINT, signal_handler)
-
-
-
-
-# while True:
-#     value = q.get()
-#     print(value)
-#     sleep(.01)
