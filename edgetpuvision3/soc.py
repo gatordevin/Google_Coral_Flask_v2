@@ -2,26 +2,16 @@ from flask_socketio import SocketIO, emit
 from flask import Flask, render_template, url_for, copy_current_request_context, Response
 from random import random
 from time import sleep
-from threading import Thread, Event
-from classify import Model
 import queue
-import threading
 from apps3 import Run_Server
 import logging
-from threading import Thread, Event
-from flask import Flask, send_file, Response, render_template
-from time import sleep
 from PIL import Image
 from io import BytesIO
-from threading import Thread, active_count
-import signal
-from threading import Thread, Event
-from threading import Thread
+from threading import Thread, active_count, Event
 import sys
 import threading
-import queue
 from classify import Model
-
+from detect import Model_Detect
 
 __author__ = 'slynn'
 
@@ -34,7 +24,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 
 
-model = Model
+model = Model_Detect
 
 l = Run_Server(model)
 

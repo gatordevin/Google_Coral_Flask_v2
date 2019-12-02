@@ -136,6 +136,7 @@ def run_server(model):
         def stupid_overlay(tensor, layout, command):
             print(tensor.shape, "stupoid_overlaty")
         def kill():
+            pass
             
 
         camera.render_overlay = render_overlay

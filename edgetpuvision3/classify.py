@@ -107,7 +107,7 @@ class Model():
 
     def __init__():
         pass
-    
+    @staticmethod
     def add_render_gen_args(parser):
         parser.add_argument('--model', required=False,
                         help='.tflite model path', default='/home/mendel/demo_files/mobilenet_v2_1.0_224_quant_edgetpu.tflite')
@@ -121,7 +121,7 @@ class Model():
                             help='class score threshold')
         parser.add_argument('--print', default=False, action='store_true',
                             help='Print inference results')
-
+    @staticmethod
     def render_gen(args):
         
         acc = accumulator(size=args.window, top_k=args.top_k)
