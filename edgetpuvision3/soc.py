@@ -23,18 +23,25 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 
 
+class DataStore():
+    a = None
+    c = None
+
+data = DataStore()
+
+
+
 
 model = Model_Detect
-
-l = Run_Server(model)
-
+    
+data.a = Run_Server(model)
 
 
 def checkClient(q, qu):
     while True:
 
-        img = l.image()[0]
-        svg = l.image()[1]
+        img = data.a.image()[0]
+        svg = data.a.image()[1]
 
         
         q.put(img)
@@ -88,7 +95,21 @@ def randomNumberGenerator():
 
 
 @app.route('/')
-def index():
+def indexa():
+    
+
+    #only by sending this page first will the client be connected to the socketio instance
+    return render_template('sanic.html')
+
+@app.route('/b')
+def indexb():
+    data.a._stop_recording()
+
+    model = Model
+        
+    data.a = Run_Server(model)
+
+
     #only by sending this page first will the client be connected to the socketio instance
     return render_template('sanic.html')
 

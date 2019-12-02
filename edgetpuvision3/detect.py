@@ -37,7 +37,6 @@ from edgetpu.detection.engine import DetectionEngine
 
 import svg
 import utils
-from apps import run_app
 
 CSS_STYLES = str(svg.CssStyle({'.back': svg.Style(fill='black',
                                                   stroke='black',
@@ -279,9 +278,3 @@ class Model_Detect():
                 engine = next(engines)
 
     
-
-def main():
-    run_app(add_render_gen_args, render_gen)
-
-if __name__ == '__main__':
-    main()

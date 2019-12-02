@@ -74,7 +74,7 @@ class Run_Server():
     def _stop_recording(self):
         
         self._camera.stop_recording()
-
+    
     def return_frame(self):
 
         self._camera.request_key_frame()
