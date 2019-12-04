@@ -95,7 +95,7 @@ class Run_Server():
         # im = PIL.Image.fromarray(numpy.uint8(test))
         # self.img = im
 
-            
+        
         self.overlay = self.gen.send((tensor, layout, command))
         
     def stupid_overlay(self, tensor, layout, command):
