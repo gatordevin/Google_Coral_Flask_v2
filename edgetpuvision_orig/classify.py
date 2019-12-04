@@ -145,7 +145,6 @@ def render_gen(args):
             engine = next(engines)
 
 def add_render_gen_args(parser):
-<<<<<<< HEAD
     parser.add_argument('--model', required=False,
                         help='.tflite model path', default='/home/mendel/demo_files/mobilenet_v2_1.0_224_quant_edgetpu.tflite')
     parser.add_argument('--labels', required=False,
@@ -158,21 +157,19 @@ def add_render_gen_args(parser):
                         help='class score threshold')
     parser.add_argument('--print', default=False, action='store_true',
                         help='Print inference results')
-=======
-        parser.add_argument('--model', required=False,
-                        help='.tflite model path', default='/home/mendel/demo_files/mobilenet_v2_1.0_224_quant_edgetpu.tflite')
-        parser.add_argument('--labels', required=False,
-                            help='label file path', default='/home/mendel/demo_files/imagenet_labels.txt')
-        parser.add_argument('--window', type=int, default=10,
-                            help='number of frames to accumulate inference results')
-        parser.add_argument('--top_k', type=int, default=3,
-                            help='number of classes with highest score to display')
-        parser.add_argument('--threshold', type=float, default=0.1,
-                            help='class score threshold')
-        parser.add_argument('--print', default=False, action='store_true',
-                            help='Print inference results')
+    parser.add_argument('--model', required=False,
+                    help='.tflite model path', default='/home/mendel/demo_files/mobilenet_v2_1.0_224_quant_edgetpu.tflite')
+    parser.add_argument('--labels', required=False,
+                        help='label file path', default='/home/mendel/demo_files/imagenet_labels.txt')
+    parser.add_argument('--window', type=int, default=10,
+                        help='number of frames to accumulate inference results')
+    parser.add_argument('--top_k', type=int, default=3,
+                        help='number of classes with highest score to display')
+    parser.add_argument('--threshold', type=float, default=0.1,
+                        help='class score threshold')
+    parser.add_argument('--print', default=False, action='store_true',
+                        help='Print inference results')
 
->>>>>>> 0755548a7dc24a851fb26042191c13fa10785753
 
 def main():
     run_app(add_render_gen_args, render_gen)

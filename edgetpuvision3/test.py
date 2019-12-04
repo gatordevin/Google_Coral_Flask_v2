@@ -10,8 +10,8 @@ from io import BytesIO
 from threading import Thread, active_count, Event
 import sys
 import threading
-from classify import Model
-from detect import Model_Detect
+from classify_serv import Model
+from detect_serv import Model_Detect
 from flask import Flask, Response, redirect, request, url_for
 __author__ = 'slynn'
 
@@ -33,7 +33,7 @@ data = DataStore()
 
 
 
-model = Model
+model = Model_Detect
     
 data.a = Run_Server(model)
 
@@ -44,6 +44,7 @@ def checkClient(q, qu):
         img = data.a.image()[0]
         svg = data.a.image()[1]
         # print(svg)
+        
         if svg:
             qu.put(svg)
         if img:
@@ -61,8 +62,8 @@ t1.deamon = True
 def svg():
     for i, c in enumerate(itertools.cycle('\|/-')):
         
-        c = svg = qu.get()
-        
+        c = qu.get()
+        c = c.replace('\n','')
         yield "data: %s \n\n" % (c)
 def gen():
     while True:

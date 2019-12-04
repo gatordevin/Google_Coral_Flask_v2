@@ -139,7 +139,7 @@ class Model():
 
         yield utils.input_image_size(engine)
 
-        output = None
+        output = Noneedgetpuvision3
         while True:
             tensor, layout, command = (yield output)
             
@@ -155,7 +155,7 @@ class Model():
                     print_results(inference_rate, results)
 
                 title = titles[engine]
-                
+                print(title)
                 output = overlay(title, results, inference_time, inference_rate, layout)
             else:
                 output = None
