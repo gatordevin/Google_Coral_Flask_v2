@@ -213,7 +213,7 @@ def on_new_sample(sink, pipeline, render_overlay, layout, images, get_command):
     with pull_sample(sink) as (sample, data):
         custom_command = None
         save_frame = False
-        
+
         command = get_command()
         if command == COMMAND_SAVE_FRAME:
             save_frame = True
@@ -225,7 +225,7 @@ def on_new_sample(sink, pipeline, render_overlay, layout, images, get_command):
             Gtk.main_quit()
         else:
             custom_command = command
-            
+
         svg = render_overlay(np.frombuffer(data, dtype=np.uint8),
                              command=custom_command)
         glsink = pipeline.get_by_name('glsink')
@@ -363,7 +363,7 @@ def run_pipeline(pipeline, layout, loop, render_overlay, display, handle_sigint=
             {'new-sample': functools.partial(on_new_sample,
                 render_overlay=functools.partial(render_overlay, layout=layout),
                 layout=layout,
-                images=images,  
+                images=images,
                 get_command=get_command),
              'eos' : on_sink_eos},
             **(signals or {})

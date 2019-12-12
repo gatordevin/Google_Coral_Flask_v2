@@ -15,6 +15,7 @@
 import argparse
 import logging
 import signal
+from TPUCameraManager.TPUCameraManager import CameraManager, GStreamerPipelines
 
 from camera import make_camera
 from gstreamer import Display, run_gen
@@ -40,20 +41,26 @@ def run_server(add_render_gen_args, render_gen):
     args = parser.parse_args()
 
     gen = render_gen(args)
-    camera = make_camera(args.source, next(gen), args.loop)
-    camera2 = make_camera('/dev/video1:YUY2:640x480:30/1', (320,320), args.loop)
+    #camera = make_camera(args.source, next(gen), args.loop)
+    camMan = CameraManager()
+    cam2 = camMan.newCam(0,GStreamerPipelines.H264,(640,480),30)
+    assert cam2 is not None
 
-    assert camera is not None
+    # with StreamingServer(camera, args.bitrate) as server:
+    #     def render_overlay(tensor, layout, command):
+    #         overlay = gen.send((tensor, layout, command))
+    #         server.send_overlay(overlay if overlay else EMPTY_SVG)
 
-    with StreamingServer(camera, args.bitrate) as server:
-        def render_overlay(tensor, layout, command):
-            overlay = gen.send((tensor, layout, command))
-            server.send_overlay(overlay if overlay else EMPTY_SVG)
+    #     camera.render_overlay = render_overlay
+    #     signal.pause()
+    with StreamingServer(args.bitrate) as server:
+        cam2.addListener(server)
+        # def render_overlay(tensor, layout, command):
+        #     overlay = gen.send((tensor, layout, command))
+        #     server.send_overlay(overlay if overlay else EMPTY_SVG)
 
-        camera.render_overlay = render_overlay
+        # camera.render_overlay = render_overlay
         signal.pause()
-
-
 def run_app(add_render_gen_args, render_gen):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--source',

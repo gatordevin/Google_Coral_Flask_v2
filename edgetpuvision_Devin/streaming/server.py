@@ -248,10 +248,9 @@ class StreamingServer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def __init__(self, camera, bitrate=1000000, mdns_name=None,
+    def __init__(self, bitrate=1000000, mdns_name=None,
                  tcp_port=4665, web_port=4664, annexb_port=4666):
         self._bitrate = bitrate
-        self._camera = camera
         self._clients = AtomicSet()
         self._enabled_clients = AtomicSet()
         self._done = threading.Event()
@@ -269,13 +268,15 @@ class StreamingServer:
             client.send_overlay(svg)
 
     def _start_recording(self):
-        logger.info('Camera start recording')
-        self._camera.start_recording(self, format='h264', profile='baseline',
-            inline_headers=True, bitrate=self._bitrate, intra_period=0)
+        #logger.info('Camera start recording')
+        #self._camera.start_recording(self, format='h264', profile='baseline',
+        #    inline_headers=True, bitrate=self._bitrate, intra_period=0)
+        pass
 
     def _stop_recording(self):
-        logger.info('Camera stop recording')
-        self._camera.stop_recording()
+        #logger.info('Camera stop recording')
+        #self._camera.stop_recording()
+        pass
 
     def _process_command(self, client, command):
         was_streaming = bool(self._enabled_clients)
@@ -324,9 +325,9 @@ class StreamingServer:
                         sock, addr = ready.accept()
                         name = '%s:%d' % addr
                         if ready is tcp_socket:
-                            client = ProtoClient(name, sock, self._commands, self._camera.resolution)
+                            client = ProtoClient(name, sock, self._commands, (640,480))
                         elif ready is web_socket:
-                            client = WsProtoClient(name, sock, self._commands, self._camera.resolution)
+                            client = WsProtoClient(name, sock, self._commands, (640,480))
                         elif ready is annexb_socket:
                             client = AnnexbClient(name, sock, self._commands)
                         logger.info('New %s connection from %s', client.TYPE, name)
@@ -343,6 +344,7 @@ class StreamingServer:
             logger.info('Done')
 
     def write(self, data):
+        #print(data)
         """Called by camera thread for each compressed frame."""
         assert data[0:4] == b'\x00\x00\x00\x01'
         frame_type = data[4] & 0b00011111
@@ -350,7 +352,8 @@ class StreamingServer:
             states = {client.send_video(frame_type, data) for client in self._enabled_clients}
             if ClientState.ENABLED_NEEDS_SPS in states:
                 logger.info('Requesting key frame')
-                self._camera.request_key_frame()
+                pass
+                #self._camera.request_key_frame()
 
 class ClientLogger(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -478,8 +481,8 @@ class ProtoClient(Client):
     def __init__(self, name, sock, command_queue, resolution):
         super().__init__(name, sock, command_queue)
         self._resolution = resolution
+
     def _queue_video(self, data):
-        print("Wotr")
         return self._queue_message(VideoMessage(data))
 
     def _queue_overlay(self, svg):
