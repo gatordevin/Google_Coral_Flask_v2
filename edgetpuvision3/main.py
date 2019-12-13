@@ -10,8 +10,8 @@ from io import BytesIO
 from threading import Thread, active_count, Event
 import sys
 import threading
-from classify_serv import Model
-from detect_serv import Model_Detect
+from classify import Model
+from detect import Model_Detect
 from flask import Flask, Response, redirect, request, url_for
 __author__ = 'slynn'
 
@@ -33,7 +33,7 @@ data = DataStore()
 
 
 
-model = Model_Detect
+model = Model
     
 data.a = Run_Server(model)
 
@@ -84,10 +84,34 @@ def video_feed():
 
 
 @app.route('/')
-def index():
+def init():
     if request.headers.get('accept') == 'text/event-stream':
         return Response(svg(), content_type='text/event-stream')
     return render_template('index.html')
+
+@app.route('/detect')
+def detect_route():
+    data.a._stop_recording()
+    sleep(2)
+    model = Model_Detect
+        
+    data.a = Run_Server(model)
+    if request.headers.get('accept') == 'text/event-stream':
+        return Response(svg(), content_type='text/event-stream')
+    return render_template('index.html')
+
+
+@app.route('/classify')
+def classify():
+    data.a._stop_recording()
+    sleep(2)
+    model = Model
+        
+    data.a = Run_Server(model)
+    if request.headers.get('accept') == 'text/event-stream':
+        return Response(svg(), content_type='text/event-stream')
+    return render_template('index.html')
+
 
 
 if __name__ == '__main__':

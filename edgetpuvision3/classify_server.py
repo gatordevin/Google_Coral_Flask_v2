@@ -21,7 +21,7 @@ python3 -m edgetpuvision.classify_server \
   --labels ${TEST_DATA}/inat_bird_labels.txt
 """
 
-from apps import run_server
+from apps1 import run_server
 from classify import Model
 
 model = Model

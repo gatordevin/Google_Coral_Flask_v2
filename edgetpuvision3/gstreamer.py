@@ -49,7 +49,8 @@ from PIL import Image
 
 from pipelines import *
 
-COMMAND_SAVE_FRAME = 'd'
+COMMAND_SAVE_FRAME = ''
+
 COMMAND_PRINT_INFO = 'p'
 COMMAND_QUIT       = 'q'
 WINDOW_TITLE       = 'Coral'

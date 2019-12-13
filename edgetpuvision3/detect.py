@@ -37,7 +37,6 @@ from edgetpu.detection.engine import DetectionEngine
 
 import svg
 import utils
-from apps import run_app
 
 CSS_STYLES = str(svg.CssStyle({'.back': svg.Style(fill='black',
                                                   stroke='black',
@@ -205,8 +204,77 @@ def add_render_gen_args(parser):
     parser.add_argument('--print', default=False, action='store_true',
                         help='Print inference results')
 
-def main():
-    run_app(add_render_gen_args, render_gen)
 
-if __name__ == '__main__':
-    main()
+
+class Model_Detect():
+
+    def __init__():
+        pass
+    @staticmethod
+    def add_render_gen_args(parser):
+        parser.add_argument('--model',
+                            help='.tflite model path', required=False, default='/home/mendel/demo_files/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite')
+        parser.add_argument('--labels',
+                            help='labels file path')
+        parser.add_argument('--top_k', type=int, default=50,
+                            help='Max number of objects to detect')
+        parser.add_argument('--threshold', type=float, default=0.1,
+                            help='Detection threshold')
+        parser.add_argument('--min_area', type=float, default=0.0,
+                            help='Min bounding box area')
+        parser.add_argument('--max_area', type=float, default=1.0,
+                            help='Max bounding box area')
+        parser.add_argument('--filter', default=None,
+                            help='Comma-separated list of allowed labels')
+        parser.add_argument('--color', default=None,
+                            help='Bounding box display color'),
+        parser.add_argument('--print', default=False, action='store_true',
+                            help='Print inference results')
+    @staticmethod
+    def render_gen(args):
+        fps_counter  = utils.avg_fps_counter(30)
+
+        engines, titles = utils.make_engines(args.model, DetectionEngine)
+        assert utils.same_input_image_sizes(engines)
+        engines = itertools.cycle(engines)
+        engine = next(engines)
+
+        labels = utils.load_labels(args.labels) if args.labels else None
+        filtered_labels = set(l.strip() for l in args.filter.split(',')) if args.filter else None
+        get_color = make_get_color(args.color, labels)
+
+        draw_overlay = True
+
+        yield utils.input_image_size(engine)
+
+        output = None
+        while True:
+            tensor, layout, command = (yield output)
+            
+
+            inference_rate = next(fps_counter)
+            if draw_overlay:
+                start = time.monotonic()
+                objs = engine .detect_with_input_tensor(tensor, threshold=args.threshold, top_k=args.top_k)
+                inference_time = time.monotonic() - start
+                objs = [convert(obj, labels) for obj in objs]
+
+                if labels and filtered_labels:
+                    objs = [obj for obj in objs if obj.label in filtered_labels]
+
+                objs = [obj for obj in objs if args.min_area <= obj.bbox.area() <= args.max_area]
+
+                if args.print:
+                    print_results(inference_rate, objs)
+
+                title = titles[engine]
+                output = overlay(title, objs, get_color, inference_time, inference_rate, layout)
+            else:
+                output = None
+
+            if command == 'o':
+                draw_overlay = not draw_overlay
+            elif command == 'n':
+                engine = next(engines)
+
+    

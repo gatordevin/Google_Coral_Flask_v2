@@ -1,17 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <script src="//code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
- 
-
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
 </head>
 <body>
-    
-<h2>Async Flask</h2>
+    <title>Server Send Events Demo</title>
+    <style>
+      .img-overlay-wrap {
+        position: relative;
+        display: inline-block; /* <= shrinks container to image size */
+        transition: transform 150ms ease-in-out;
+      }
+      
+      .img-overlay-wrap img { /* <= optional, for responsiveness */
+         display: block;
+         max-width: 100%;
+         height: auto;
+      }
+      
+      .img-overlay-wrap svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      
+      
+      </style>
+      
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script>
+if (!!window.EventSource) {
+  var source = new EventSource('/');
+  source.onmessage = function(e) {
+    console.log(e.data)
+    $("#data").html(e.data);
+  }
+}
+</script>
 
-<img style="height:480px; width: 640px;" src="{{ url_for('video_feed') }}">
+<div class="img-overlay-wrap">
+
+  <img style="height:480px; width: 640px;" src="{{ url_for('video_feed') }}">
+  
+  <div id="data">nothing received yet</div>
+</div>
+
+
 
 
 </body>
